@@ -1,16 +1,11 @@
-.PHONY: infra-up infra-down rabbit-setup up down logs
+.PHONY: infra-up infra-down up down logs logs-book logs-inventory logs-notification
 
-# ── Day 1: Start infra only ───────────────────────────────────────────────────
+# ── Day 1: Start infra only (LocalStack SNS/SQS + 3x Postgres) ───────────────
 infra-up:
-	docker compose up -d rabbitmq postgres-book postgres-inventory postgres-notification
+	docker compose up -d localstack postgres-book postgres-inventory postgres-notification
 
 infra-down:
 	docker compose down -v
-
-# Declare RabbitMQ exchanges, queues, and bindings.
-# Run this once after `make infra-up` and RabbitMQ is healthy.
-rabbit-setup:
-	sh rabbitmq/setup.sh
 
 # ── Day 2+: Full stack ────────────────────────────────────────────────────────
 up:
