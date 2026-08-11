@@ -1,6 +1,6 @@
 services:
   localstack:
-    image: localstack/localstack:latest
+    image: localstack/localstack:3.8.0
     ports:
       - "4566:4566"            # LocalStack Gateway
       - "4510-4559:4510-4559"   # external services port range
@@ -18,6 +18,8 @@ services:
 
   postgres-book:
     image: postgres:16-alpine
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: book_db
       POSTGRES_USER: book
@@ -32,6 +34,8 @@ services:
 
   postgres-inventory:
     image: postgres:16-alpine
+    ports:
+      - "5433:5432"
     environment:
       POSTGRES_DB: inventory_db
       POSTGRES_USER: inv
@@ -46,6 +50,8 @@ services:
 
   postgres-notification:
     image: postgres:16-alpine
+    ports:
+      - "5434:5432"
     environment:
       POSTGRES_DB: notification_db
       POSTGRES_USER: notif

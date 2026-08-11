@@ -8,7 +8,7 @@ awslocal sqs create-queue --queue-name library-dlq
 DLQ_ARN=$(awslocal sqs get-queue-attributes --queue-url http://localhost:4566/000000000000/library-dlq --attribute-names QueueArn --query 'Attributes.QueueArn' --output text)
 
 # Redrive policy for max 3 retries before DLQ
-REDRIVE_POLICY="{\"deadLetterTargetArn\":\"$DLQ_ARN\",\"maxReceiveCount\":\"3\"}"
+REDRIVE_POLICY="{\\\"deadLetterTargetArn\\\":\\\"$DLQ_ARN\\\",\\\"maxReceiveCount\\\":\\\"3\\\"}"
 
 # 2. Create Service Queues with DLQ attached
 awslocal sqs create-queue --queue-name inventory-book-events --attributes "{\"RedrivePolicy\":\"$REDRIVE_POLICY\"}"
