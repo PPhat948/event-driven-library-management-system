@@ -64,6 +64,71 @@ services:
       timeout: 5s
       retries: 5
 
+  book-service:
+    build: ./services/book-service
+    ports:
+      - "8001:8001"
+    environment:
+      DATABASE_URL: postgres://book:book@postgres-book:5432/book_db?sslmode=disable
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://localstack:4566
+      SNS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:library-events
+      SERVER_PORT: "8001"
+      LOG_LEVEL: info
+    depends_on:
+      postgres-book:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+  inventory-service:
+    build: ./services/inventory-service
+    ports:
+      - "8002:8002"
+    environment:
+      DATABASE_URL: postgres://inv:inv@postgres-inventory:5432/inventory_db?sslmode=disable
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://localstack:4566
+      SNS_TOPIC_ARN: arn:aws:sns:us-east-1:000000000000:library-events
+      SQS_QUEUE_URL: http://localstack:4566/000000000000/inventory-book-events
+      SERVER_PORT: "8002"
+      LOG_LEVEL: info
+      LOW_STOCK_THRESHOLD: "2"
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+  notification-service:
+    build: ./services/notification-service
+    ports:
+      - "8003:8003"
+    environment:
+      DATABASE_URL: postgres://notif:notif@postgres-notification:5432/notification_db?sslmode=disable
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT_URL: http://localstack:4566
+      SQS_QUEUE_URL: http://localstack:4566/000000000000/notification-events
+      SERVER_PORT: "8003"
+      LOG_LEVEL: info
+    depends_on:
+      postgres-notification:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - book-service
+      - inventory-service
+      - notification-service
+
 volumes:
   localstack_data:
   postgres_book_data:
