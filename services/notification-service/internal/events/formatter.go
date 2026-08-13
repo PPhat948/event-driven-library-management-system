@@ -57,7 +57,7 @@ func FormatMessage(env EventEnvelope) (msg, memberID, bookID, bookTitle string, 
 		if err = json.Unmarshal(env.Payload, &p); err != nil {
 			return
 		}
-		msg = fmt.Sprintf("⚠️ Low stock alert: \"%s\" — %d of %d copies remaining",
+		msg = fmt.Sprintf("Low stock alert: \"%s\" — %d of %d copies remaining",
 			p.Title, p.AvailableCount, p.TotalQuantity)
 		bookID, bookTitle = p.BookID, p.Title
 
@@ -66,7 +66,7 @@ func FormatMessage(env EventEnvelope) (msg, memberID, bookID, bookTitle string, 
 		if err = json.Unmarshal(env.Payload, &p); err != nil {
 			return
 		}
-		msg = fmt.Sprintf("🚨 Out of stock: \"%s\" — no copies available", p.Title)
+		msg = fmt.Sprintf("Out of stock: \"%s\" — no copies available", p.Title)
 		bookID, bookTitle = p.BookID, p.Title
 
 	default:

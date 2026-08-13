@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down up down logs logs-book logs-inventory logs-notification run-book run-inventory run-notification test test-integration seed
+.PHONY: infra-up infra-down up down logs logs-book logs-inventory logs-notification run-book run-inventory run-notification test test-integration test-e2e seed
 
 # ── Day 1: Start infra only (LocalStack SNS/SQS + 3x Postgres) ───────────────
 infra-up:
@@ -46,6 +46,9 @@ test-integration:
 	cd services/book-service && go test -v -tags=integration ./...
 	cd services/inventory-service && go test -v -tags=integration ./...
 	cd services/notification-service && go test -v -tags=integration ./...
+
+test-e2e:
+	go run scripts/test_e2e.go
 
 # ── Seed demo data ─────────────────────────────────────────────────────────────
 seed:
