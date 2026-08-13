@@ -1,4 +1,4 @@
-.PHONY: infra-up infra-down up down logs logs-book logs-inventory logs-notification run-book run-inventory tidy-book seed
+.PHONY: infra-up infra-down up down logs logs-book logs-inventory logs-notification run-book run-inventory run-notification tidy-book seed
 
 # ── Day 1: Start infra only (LocalStack SNS/SQS + 3x Postgres) ───────────────
 infra-up:
@@ -32,6 +32,9 @@ run-book:
 
 run-inventory:
 	cd services/inventory-service && go run .
+
+run-notification:
+	cd services/notification-service && go run .
 
 tidy-book:
 	cd services/book-service && go mod tidy
