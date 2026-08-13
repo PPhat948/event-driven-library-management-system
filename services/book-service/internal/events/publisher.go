@@ -9,6 +9,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sns"
 )
 
+type EventPublisher interface {
+	Publish(ctx context.Context, eventType, correlationID string, payload any) error
+}
+
 type Publisher struct {
 	client   *sns.Client
 	topicARN string

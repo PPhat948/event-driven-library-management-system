@@ -19,11 +19,11 @@ type Handler struct {
 	pool    *pgxpool.Pool
 	books   *internal.BookRepo
 	borrows *internal.BorrowRepo
-	pub     *events.Publisher
+	pub     events.EventPublisher
 	log     zerolog.Logger
 }
 
-func New(pool *pgxpool.Pool, books *internal.BookRepo, borrows *internal.BorrowRepo, pub *events.Publisher, log zerolog.Logger) *Handler {
+func New(pool *pgxpool.Pool, books *internal.BookRepo, borrows *internal.BorrowRepo, pub events.EventPublisher, log zerolog.Logger) *Handler {
 	return &Handler{
 		pool:    pool,
 		books:   books,

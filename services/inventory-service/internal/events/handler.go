@@ -16,12 +16,12 @@ import (
 type Handler struct {
 	db                *pgxpool.Pool
 	repo              *internal.InventoryRepo
-	pub               *Publisher
+	pub               EventPublisher
 	lowStockThreshold int
 	log               zerolog.Logger
 }
 
-func NewHandler(db *pgxpool.Pool, repo *internal.InventoryRepo, pub *Publisher, threshold int, log zerolog.Logger) *Handler {
+func NewHandler(db *pgxpool.Pool, repo *internal.InventoryRepo, pub EventPublisher, threshold int, log zerolog.Logger) *Handler {
 	return &Handler{
 		db:                db,
 		repo:              repo,
