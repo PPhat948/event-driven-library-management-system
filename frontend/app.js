@@ -497,7 +497,9 @@ function renderInventoryTable() {
 
     // Search query
     if (state.searchQuery) {
-      return (item.title || '').toLowerCase().includes(state.searchQuery);
+      const matchTitle = (item.title || '').toLowerCase().includes(state.searchQuery);
+      const matchAuthor = (item.author || '').toLowerCase().includes(state.searchQuery);
+      return matchTitle || matchAuthor;
     }
 
     return true;
@@ -529,7 +531,10 @@ function renderInventoryTable() {
     return `
       <tr>
         <td>
-          <strong>${escapeHTML(item.title)}</strong>
+          <div class="book-title-cell">
+            <span class="book-title-text">${escapeHTML(item.title)}</span>
+            <span class="book-author-text">${escapeHTML(item.author || '-')}</span>
+          </div>
         </td>
         <td>${item.total_quantity}</td>
         <td><strong>${item.available_count}</strong></td>
