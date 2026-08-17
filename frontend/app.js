@@ -72,7 +72,7 @@ const elements = {
 
   // Tables & Feeds
   catalogTableBody: document.getElementById('catalog-table-body'),
-  inventoryTableBody: document.getElementById('inventory-table-body'),
+  inventoryContainer: document.getElementById('inventory-container'),
   activityTableBody: document.getElementById('activity-table-body'),
 
   // Modals & Forms
@@ -476,11 +476,11 @@ function renderCatalogTable() {
 }
 
 function renderInventoryTable() {
+  if (!elements.inventoryContainer) return;
+
   if (state.inventoryList.length === 0) {
-    elements.inventoryTableBody.innerHTML = `
-      <tr>
-        <td colspan="6" class="empty-state">No inventory data available yet.</td>
-      </tr>
+    elements.inventoryContainer.innerHTML = `
+      <div class="empty-state">No inventory data available yet.</div>
     `;
     return;
   }
@@ -506,46 +506,91 @@ function renderInventoryTable() {
   });
 
   if (filtered.length === 0) {
-    elements.inventoryTableBody.innerHTML = `
-      <tr>
-        <td colspan="6" class="empty-state">No inventory items matching filter criteria.</td>
-      </tr>
+    elements.inventoryContainer.innerHTML = `
+      <div class="empty-state">No inventory items matching filter criteria.</div>
     `;
     return;
   }
 
-  elements.inventoryTableBody.innerHTML = filtered.map(item => {
-    let badgeClass = 'badge-available';
-    let statusLabel = 'Available';
+  // Define status groups
+  const groups = [
+    { key: 'out_of_stock', title: 'Out of Stock', badgeClass: 'badge-out', fillClass: 'fill-red', items: [] },
+    { key: 'low_stock', title: 'Low Stock (≤ 2)', badgeClass: 'badge-low', fillClass: 'fill-amber', items: [] },
+    { key: 'available', title: 'Available', badgeClass: 'badge-available', fillClass: 'fill-green', items: [] }
+  ];
 
-    if (item.status === 'out_of_stock' || item.available_count === 0) {
-      badgeClass = 'badge-out';
-      statusLabel = 'Out of stock';
-    } else if (item.status === 'low_stock' || item.available_count <= 2) {
-      badgeClass = 'badge-low';
-      statusLabel = 'Low stock';
-    }
+  filtered.forEach(item => {
+    const status = (item.status === 'out_of_stock' || item.available_count === 0)
+      ? 'out_of_stock'
+      : (item.status === 'low_stock' || item.available_count <= 2 ? 'low_stock' : 'available');
+    const grp = groups.find(g => g.key === status) || groups[2];
+    grp.items.push(item);
+  });
 
-    const updatedTime = item.updated_at ? new Date(item.updated_at).toLocaleTimeString() : '-';
+  elements.inventoryContainer.innerHTML = groups
+    .filter(g => g.items.length > 0)
+    .map(g => {
+      const countLabel = `${g.items.length} ${g.items.length === 1 ? 'title' : 'titles'}`;
 
-    return `
-      <tr>
-        <td>
-          <div class="book-title-cell">
-            <span class="book-title-text">${escapeHTML(item.title)}</span>
-            <span class="book-author-text">${escapeHTML(item.author || '-')}</span>
+      const rowsHTML = g.items.map(item => {
+        const total = item.total_quantity || 0;
+        const available = item.available_count || 0;
+        const borrowed = item.borrowed_count || 0;
+        const pct = total > 0 ? Math.min(100, Math.round((borrowed / total) * 100)) : 0;
+        const updatedTime = item.updated_at ? new Date(item.updated_at).toLocaleTimeString() : '-';
+
+        return `
+          <tr>
+            <td>
+              <div class="book-title-cell">
+                <span class="book-title-text">${escapeHTML(item.title)}</span>
+                <span class="book-author-text">${escapeHTML(item.author || '-')}</span>
+              </div>
+            </td>
+            <td>${total}</td>
+            <td><strong>${available}</strong></td>
+            <td>${borrowed}</td>
+            <td>
+              <div class="stock-bar-cell">
+                <div class="stock-bar-track">
+                  <div class="stock-bar-fill ${g.fillClass}" style="width: ${pct}%;"></div>
+                </div>
+                <span class="stock-bar-text">${pct}%</span>
+              </div>
+            </td>
+            <td><span class="activity-time">${updatedTime}</span></td>
+          </tr>
+        `;
+      }).join('');
+
+      return `
+        <div class="inventory-group">
+          <div class="inventory-group-header">
+            <div class="inventory-group-title">
+              <span class="badge ${g.badgeClass}">${g.title}</span>
+            </div>
+            <span class="inventory-group-count">${countLabel}</span>
           </div>
-        </td>
-        <td>${item.total_quantity}</td>
-        <td><strong>${item.available_count}</strong></td>
-        <td>${item.borrowed_count}</td>
-        <td>
-          <span class="badge ${badgeClass}">${statusLabel}</span>
-        </td>
-        <td><span class="activity-time">${updatedTime}</span></td>
-      </tr>
-    `;
-  }).join('');
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Title & Author</th>
+                  <th>Total</th>
+                  <th>Available</th>
+                  <th>Borrowed</th>
+                  <th>Stock Utilization</th>
+                  <th>Last Synced</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${rowsHTML}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }).join('');
 }
 
 function renderActivityList() {
