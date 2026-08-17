@@ -55,9 +55,14 @@ func (c *Consumer) poll(ctx context.Context) {
 
 	for _, msg := range out.Messages {
 		if err := c.handler.Handle(ctx, *msg.Body); err != nil {
+			_, _ = c.sqsClient.ChangeMessageVisibility(ctx, &sqs.ChangeMessageVisibilityInput{
+				QueueUrl:          aws.String(c.queueURL),
+				ReceiptHandle:     msg.ReceiptHandle,
+				VisibilityTimeout: 1,
+			})
 			c.log.Error().Err(err).
 				Str("message_id", *msg.MessageId).
-				Msg("handle failed — message will be retried by SQS")
+				Msg("handle failed — message will be retried by SQS in 1s")
 			continue
 		}
 

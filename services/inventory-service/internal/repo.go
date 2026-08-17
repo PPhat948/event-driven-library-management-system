@@ -145,24 +145,46 @@ func (r *InventoryRepo) UpdateFromBookUpdated(ctx context.Context, tx pgx.Tx, bo
 	return item, err
 }
 
-// UpdateAvailableCount sets available_count to the authoritative value from the payload.
-// Using the payload value (not ±1) keeps inventory convergent even if events arrive out of order.
-func (r *InventoryRepo) UpdateAvailableCount(ctx context.Context, tx pgx.Tx, bookID uuid.UUID, availCount, threshold int) (*InventoryItem, error) {
+// DecrementOnBorrow decrements available_count and increments borrowed_count.
+func (r *InventoryRepo) DecrementOnBorrow(ctx context.Context, tx pgx.Tx, bookID uuid.UUID, threshold int) (*InventoryItem, error) {
 	item := &InventoryItem{}
 	err := scanItem(tx.QueryRow(ctx, `
 		UPDATE inventory
-		SET available_count = $1,
-		    borrowed_count  = total_quantity - $1,
+		SET available_count = GREATEST(0, available_count - 1),
+		    borrowed_count  = borrowed_count + 1,
 		    status          = CASE
-		                        WHEN $1 = 0   THEN 'out_of_stock'
-		                        WHEN $1 <= $2 THEN 'low_stock'
+		                        WHEN available_count - 1 <= 0 THEN 'out_of_stock'
+		                        WHEN available_count - 1 <= $1 THEN 'low_stock'
 		                        ELSE 'available'
 		                      END,
-		    updated_at = now()
-		WHERE book_id = $3 AND status != 'removed'
+		    updated_at      = now()
+		WHERE book_id = $2 AND status != 'removed'
 		RETURNING id, book_id, title, author, total_quantity,
 		          available_count, borrowed_count, status, updated_at
-	`, availCount, threshold, bookID), item)
+	`, threshold, bookID), item)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return nil, ErrNotFound
+	}
+	return item, err
+}
+
+// IncrementOnReturn increments available_count and decrements borrowed_count.
+func (r *InventoryRepo) IncrementOnReturn(ctx context.Context, tx pgx.Tx, bookID uuid.UUID, threshold int) (*InventoryItem, error) {
+	item := &InventoryItem{}
+	err := scanItem(tx.QueryRow(ctx, `
+		UPDATE inventory
+		SET available_count = LEAST(total_quantity, available_count + 1),
+		    borrowed_count  = GREATEST(0, borrowed_count - 1),
+		    status          = CASE
+		                        WHEN available_count + 1 <= 0 THEN 'out_of_stock'
+		                        WHEN available_count + 1 <= $1 THEN 'low_stock'
+		                        ELSE 'available'
+		                      END,
+		    updated_at      = now()
+		WHERE book_id = $2 AND status != 'removed'
+		RETURNING id, book_id, title, author, total_quantity,
+		          available_count, borrowed_count, status, updated_at
+	`, threshold, bookID), item)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}

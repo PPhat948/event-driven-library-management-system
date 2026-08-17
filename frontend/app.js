@@ -78,7 +78,7 @@ const elements = {
   // Modals & Forms
   modalAddBook: document.getElementById('modal-add-book'),
   formAddBook: document.getElementById('form-add-book'),
-  
+
   modalBorrowBook: document.getElementById('modal-borrow-book'),
   formBorrowBook: document.getElementById('form-borrow-book'),
   borrowBookId: document.getElementById('borrow-book-id'),
@@ -415,7 +415,7 @@ function renderCatalogTable() {
     const inv = state.inventoryMap.get(book.id);
     const available = inv ? inv.available_count : book.available_count;
     const total = inv ? inv.total_quantity : book.total_quantity;
-    
+
     // Status computation
     let badgeClass = 'badge-available';
     let statusLabel = 'Available';
@@ -622,7 +622,7 @@ function closeAllModals() {
 }
 
 // Global modal triggers for inline onclicks
-window.openBorrowModal = function(bookId, title, available, total) {
+window.openBorrowModal = function (bookId, title, available, total) {
   elements.borrowBookId.value = bookId;
   elements.borrowBookTitle.textContent = title;
   elements.borrowBookMeta.textContent = `Available: ${available} of ${total} copies`;
@@ -630,11 +630,11 @@ window.openBorrowModal = function(bookId, title, available, total) {
   openModal(elements.modalBorrowBook);
 };
 
-window.openReturnModal = async function(bookId, title, available, total) {
+window.openReturnModal = async function (bookId, title, available, total) {
   elements.returnBookId.value = bookId;
   elements.returnBookTitle.textContent = title;
   elements.returnBookMeta.textContent = `Current available: ${available} / ${total} copies`;
-  
+
   elements.returnBorrowerSelect.innerHTML = '<option value="">Loading active borrowers...</option>';
   elements.returnBorrowerSelect.disabled = true;
   openModal(elements.modalReturnBook);
@@ -661,7 +661,7 @@ window.openReturnModal = async function(bookId, title, available, total) {
   }
 };
 
-window.openEventInspector = function(id) {
+window.openEventInspector = function (id) {
   const notif = state.notifications.find(n => n.id === id);
   if (!notif) return;
 
@@ -690,7 +690,7 @@ window.openEventInspector = function(id) {
   openModal(elements.modalEventDetail);
 };
 
-window.deleteBook = async function(bookId, title) {
+window.deleteBook = async function (bookId, title) {
   if (!confirm(`Are you sure you want to delete "${title}"?`)) {
     return;
   }

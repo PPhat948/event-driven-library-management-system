@@ -60,10 +60,15 @@ func (c *Consumer) poll(ctx context.Context) {
 
 	for _, msg := range out.Messages {
 		if err := c.handler.Handle(ctx, *msg.Body); err != nil {
-			// Transient error — do NOT delete; SQS will re-deliver after visibility timeout.
+			// Transient error — reduce visibility timeout to 1s so SQS retries immediately
+			_, _ = c.sqsClient.ChangeMessageVisibility(ctx, &sqs.ChangeMessageVisibilityInput{
+				QueueUrl:          aws.String(c.queueURL),
+				ReceiptHandle:     msg.ReceiptHandle,
+				VisibilityTimeout: 1,
+			})
 			c.log.Error().Err(err).
 				Str("message_id", *msg.MessageId).
-				Msg("handle failed — message will be retried by SQS")
+				Msg("handle failed — message will be retried by SQS in 1s")
 			continue
 		}
 

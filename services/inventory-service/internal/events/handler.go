@@ -159,10 +159,10 @@ func (h *Handler) handleBookBorrowed(ctx context.Context, env EventEnvelope) err
 		return err
 	}
 
-	item, err := h.repo.UpdateAvailableCount(ctx, tx, bookID, p.AvailableCountAfter, h.lowStockThreshold)
+	item, err := h.repo.DecrementOnBorrow(ctx, tx, bookID, h.lowStockThreshold)
 	if errors.Is(err, internal.ErrNotFound) {
-		h.log.Warn().Str("book_id", p.BookID).Msg("book not in inventory yet — skipping borrow event")
-		return tx.Commit(ctx)
+		h.log.Warn().Str("book_id", p.BookID).Msg("book not in inventory yet — retrying via SQS")
+		return err
 	}
 	if err != nil {
 		return err
@@ -200,10 +200,10 @@ func (h *Handler) handleBookReturned(ctx context.Context, env EventEnvelope) err
 		return err
 	}
 
-	item, err := h.repo.UpdateAvailableCount(ctx, tx, bookID, p.AvailableCountAfter, h.lowStockThreshold)
+	item, err := h.repo.IncrementOnReturn(ctx, tx, bookID, h.lowStockThreshold)
 	if errors.Is(err, internal.ErrNotFound) {
-		h.log.Warn().Str("book_id", p.BookID).Msg("book not in inventory yet — skipping return event")
-		return tx.Commit(ctx)
+		h.log.Warn().Str("book_id", p.BookID).Msg("book not in inventory yet — retrying via SQS")
+		return err
 	}
 	if err != nil {
 		return err
