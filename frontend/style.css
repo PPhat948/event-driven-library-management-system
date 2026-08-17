@@ -874,6 +874,8 @@ body {
   border: none;
   border-radius: 0;
   margin: 0;
+  width: 100%;
+  table-layout: fixed;
 }
 
 .inventory-group .data-table thead {
@@ -893,6 +895,43 @@ body {
 .inventory-group .data-table td {
   padding: 14px 20px;
   vertical-align: middle;
+}
+
+/* Enforce exact column alignment across all status group tables */
+.inventory-group .data-table th:nth-child(1),
+.inventory-group .data-table td:nth-child(1) {
+  width: 36%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.inventory-group .data-table th:nth-child(2),
+.inventory-group .data-table td:nth-child(2) {
+  width: 10%;
+  text-align: center;
+}
+
+.inventory-group .data-table th:nth-child(3),
+.inventory-group .data-table td:nth-child(3) {
+  width: 10%;
+  text-align: center;
+}
+
+.inventory-group .data-table th:nth-child(4),
+.inventory-group .data-table td:nth-child(4) {
+  width: 10%;
+  text-align: center;
+}
+
+.inventory-group .data-table th:nth-child(5),
+.inventory-group .data-table td:nth-child(5) {
+  width: 20%;
+}
+
+.inventory-group .data-table th:nth-child(6),
+.inventory-group .data-table td:nth-child(6) {
+  width: 14%;
+  text-align: right;
 }
 
 /* Stock Utilization Bar */
