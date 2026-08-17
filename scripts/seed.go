@@ -34,7 +34,7 @@ type ListResp struct {
 func main() {
 	api := os.Getenv("BOOK_API")
 	if api == "" {
-		api = "http://localhost:8000"
+		api = "http://localhost:8001"
 	}
 
 	fmt.Printf("seeding book data -> %s\n\n", api)

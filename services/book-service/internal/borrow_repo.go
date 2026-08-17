@@ -67,6 +67,29 @@ func (r *BorrowRepo) GetActive(ctx context.Context, bookID uuid.UUID, memberID s
 	return rec, nil
 }
 
+func (r *BorrowRepo) ListActiveByBookID(ctx context.Context, bookID uuid.UUID) ([]*BorrowRecord, error) {
+	rows, err := r.pool.Query(ctx, `
+		SELECT id, book_id, member_id, member_name, borrowed_at, due_date, returned_at, status
+		FROM borrow_records
+		WHERE book_id=$1 AND status='borrowed'
+		ORDER BY borrowed_at DESC
+	`, bookID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var records []*BorrowRecord
+	for rows.Next() {
+		rec := &BorrowRecord{}
+		if err := scanRecord(rows, rec); err != nil {
+			return nil, err
+		}
+		records = append(records, rec)
+	}
+	return records, rows.Err()
+}
+
 func (r *BorrowRepo) MarkReturned(ctx context.Context, tx pgx.Tx, id uuid.UUID) (*BorrowRecord, error) {
 	rec := &BorrowRecord{}
 	row := tx.QueryRow(ctx, `

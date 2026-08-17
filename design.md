@@ -1,4 +1,4 @@
-# LibraFlow — Design Document
+# Event-Driven Library Management System — Design Document
 
 **Stack**: Go 1.22 · chi · pgx · goose · LocalStack (AWS SNS + SQS) · Docker
 
@@ -94,6 +94,47 @@ Kept minimal on purpose. Every dependency has a clear reason.
 | Server | `nginx:alpine` | Serves static files and reverse-proxies API calls to avoid CORS issues. |
 
 The frontend polls the three APIs every few seconds and renders inventory status and notification feed.
+
+### Frontend Dashboard Design & Canvas
+
+```
+┌──────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Library System          Catalog     Inventory     Activity Log          [● All services online]  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                  │
+│ Books & Circulation                                                            [ Add Book ]      │
+│ Manage book records, track available copies, and handle lending operations.                      │
+│                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ [ Search by title, author, or ISBN...             ]  [ Status: All ▼ ]     [ Auto-refresh: 2s ]  │
+│                                                                                                  │
+│ ┌──────────────────────────────────────────────────────────────────────────────────────────────┐ │
+│ │ Title & Author                 ISBN            Copies      Status         Actions            │ │
+│ ├──────────────────────────────────────────────────────────────────────────────────────────────┤ │
+│ │ Clean Code                     9780132350884   5 / 5       Available      [Borrow] [Return]  │ │
+│ │ Robert C. Martin                                                                             │ │
+│ ├──────────────────────────────────────────────────────────────────────────────────────────────┤ │
+│ │ The Go Programming Language    9780134190440   1 / 3       Low stock      [Borrow] [Return]  │ │
+│ │ Alan Donovan, Brian Kernighan                                                                │ │
+│ ├──────────────────────────────────────────────────────────────────────────────────────────────┤ │
+│ │ Designing Data-Intensive Apps  9781449373320   0 / 1       Out of stock   [Borrow] [Return]  │ │
+│ │ Martin Kleppmann                                                                             │ │
+│ └──────────────────────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                                  │
+├──────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Event Stream (AWS SNS / SQS)                                              [ Showing last 20 ]    │
+│ ┌──────────────────────────────────────────────────────────────────────────────────────────────┐ │
+│ │ 11:58:24  book.borrowed          Alice borrowed 'The Go Programming Language'                │ │
+│ │ 11:58:24  inventory.low_stock    Available stock for book 9780134190440 dropped to 1         │ │
+│ │ 11:57:10  book.added             Added new book 'Clean Code' with 5 copies                   │ │
+│ └──────────────────────────────────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Key Principles:**
+1. **Clean & Minimalist**: Standard typography, clear table layouts, subtle border lines, flat status badges, no unnecessary decorative emojis or icons.
+2. **Real-world Functionality**: Instant search, status filtering, add/borrow/return modals, and live activity stream.
+3. **Vanilla Tech Stack**: Pure HTML5, CSS3, and JavaScript without build steps or runtime overhead.
 
 ---
 
@@ -217,14 +258,15 @@ DROP TABLE processed_events; DROP TABLE inventory;
 ```sql
 -- +goose Up
 CREATE TABLE notifications (
-    id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    event_id   UUID        NOT NULL UNIQUE,
-    event_type VARCHAR(100) NOT NULL,
-    member_id  VARCHAR(100),
-    book_id    UUID,
-    book_title VARCHAR(255),
-    message    TEXT        NOT NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    id             UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+    event_id       UUID        NOT NULL UNIQUE,
+    correlation_id VARCHAR(100),
+    event_type     VARCHAR(100) NOT NULL,
+    member_id      VARCHAR(100),
+    book_id        UUID,
+    book_title     VARCHAR(255),
+    message        TEXT        NOT NULL,
+    created_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE processed_events (
@@ -248,6 +290,7 @@ DROP TABLE processed_events; DROP TABLE notifications;
 | GET | `/books` | |
 | GET | `/books/{id}` | |
 | PATCH | `/books/{id}` | `book.updated` |
+| GET | `/books/{id}/borrows` | |
 | POST | `/books/{id}/borrow` | `book.borrowed` |
 | POST | `/books/{id}/return` | `book.returned` |
 | DELETE | `/books/{id}` | `book.deleted` |
@@ -306,7 +349,7 @@ func (h *Handler) handle(ctx context.Context, env EventEnvelope) error {
 ## Project Structure
 
 ```
-LibraFlow/
+library-system/
 ├── docker-compose.yml
 ├── .env.example
 ├── Makefile
@@ -323,6 +366,10 @@ LibraFlow/
 │
 ├── localstack/
 │   └── init-aws.sh              # Auto-creates SNS topics & SQS queues on boot
+│
+├── scripts/
+│   ├── seed.go                  # Demo data populator
+│   └── test_e2e.go              # Automated integration tests
 │
 └── services/
     ├── book-service/
@@ -341,7 +388,8 @@ LibraFlow/
 | `AWS_ENDPOINT_URL` | all | `http://localstack:4566` |
 | `SNS_TOPIC_ARN` | book, inventory | `arn:aws:sns:us-east-1:000000000000:library-events` |
 | `SQS_QUEUE_URL` | inventory, notification | `http://localstack:4566/000000000000/inventory-book-events` |
-| `SERVER_PORT` | all | `8000` |
+| `SERVER_PORT` | all | `8001` (book), `8002` (inventory), `8003` (notification) |
+| `LOW_STOCK_THRESHOLD` | inventory | `2` |
 | `LOG_LEVEL` | all | `info` |
 
 ---

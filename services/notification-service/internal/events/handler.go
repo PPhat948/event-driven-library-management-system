@@ -61,7 +61,7 @@ func (h *Handler) handleEvent(ctx context.Context, env EventEnvelope) error {
 		return err
 	}
 
-	if err := h.repo.Insert(ctx, tx, eventID, env.EventType, memberID, bookID, bookTitle, msg); err != nil {
+	if err := h.repo.Insert(ctx, tx, eventID, env.CorrelationID, env.EventType, memberID, bookID, bookTitle, msg); err != nil {
 		return err
 	}
 

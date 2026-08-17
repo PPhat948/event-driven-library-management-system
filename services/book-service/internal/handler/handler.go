@@ -40,6 +40,7 @@ func (h *Handler) Routes() http.Handler {
 	r.Get("/books", h.listBooks)
 	r.Get("/books/{id}", h.getBook)
 	r.Patch("/books/{id}", h.updateBook)
+	r.Get("/books/{id}/borrows", h.listActiveBorrows)
 	r.Post("/books/{id}/borrow", h.borrowBook)
 	r.Post("/books/{id}/return", h.returnBook)
 	r.Delete("/books/{id}", h.deleteBook)
@@ -271,6 +272,28 @@ func (h *Handler) borrowBook(w http.ResponseWriter, r *http.Request) {
 	})
 
 	writeJSON(w, http.StatusOK, record)
+}
+
+// ─── GET /books/{id}/borrows ───────────────────────────────────────────────────
+
+func (h *Handler) listActiveBorrows(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(chi.URLParam(r, "id"))
+	if err != nil {
+		writeError(w, http.StatusBadRequest, "invalid book id")
+		return
+	}
+
+	borrows, err := h.borrows.ListActiveByBookID(r.Context(), id)
+	if err != nil {
+		h.log.Error().Err(err).Msg("listActiveBorrows")
+		writeError(w, http.StatusInternalServerError, "something went wrong")
+		return
+	}
+	if borrows == nil {
+		borrows = []*internal.BorrowRecord{}
+	}
+
+	writeJSON(w, http.StatusOK, map[string]any{"borrows": borrows, "total": len(borrows)})
 }
 
 // ─── POST /books/{id}/return ───────────────────────────────────────────────────
