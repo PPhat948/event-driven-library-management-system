@@ -514,9 +514,27 @@ function renderInventoryTable() {
 
   // Define status groups
   const groups = [
-    { key: 'out_of_stock', title: 'Out of Stock', badgeClass: 'badge-out', fillClass: 'fill-red', items: [] },
-    { key: 'low_stock', title: 'Low Stock (≤ 2)', badgeClass: 'badge-low', fillClass: 'fill-amber', items: [] },
-    { key: 'available', title: 'Available', badgeClass: 'badge-available', fillClass: 'fill-green', items: [] }
+    { 
+      key: 'out_of_stock', 
+      title: 'Out of Stock', 
+      desc: 'No copies remaining in library',
+      fillClass: 'fill-red', 
+      items: [] 
+    },
+    { 
+      key: 'low_stock', 
+      title: 'Low Stock', 
+      desc: '2 or fewer copies remaining',
+      fillClass: 'fill-amber', 
+      items: [] 
+    },
+    { 
+      key: 'available', 
+      title: 'Available', 
+      desc: 'Adequate copies in stock',
+      fillClass: 'fill-green', 
+      items: [] 
+    }
   ];
 
   filtered.forEach(item => {
@@ -530,7 +548,7 @@ function renderInventoryTable() {
   elements.inventoryContainer.innerHTML = groups
     .filter(g => g.items.length > 0)
     .map(g => {
-      const countLabel = `${g.items.length} ${g.items.length === 1 ? 'title' : 'titles'}`;
+      const countLabel = `${g.items.length} ${g.items.length === 1 ? 'Title' : 'Titles'}`;
 
       const rowsHTML = g.items.map(item => {
         const total = item.total_quantity || 0;
@@ -564,10 +582,11 @@ function renderInventoryTable() {
       }).join('');
 
       return `
-        <div class="inventory-group">
+        <div class="inventory-group group-${g.key}">
           <div class="inventory-group-header">
             <div class="inventory-group-title">
-              <span class="badge ${g.badgeClass}">${g.title}</span>
+              <span class="group-status-pill">${g.title}</span>
+              <span class="group-header-desc">${g.desc}</span>
             </div>
             <span class="inventory-group-count">${countLabel}</span>
           </div>
