@@ -192,7 +192,7 @@ Dead Letter Queue:
   library-dlq             ← Attached via SQS RedrivePolicy (maxReceiveCount: 3)
 ```
 
-Auto-initialized on LocalStack startup via `localstack/init-aws.sh`.
+Auto-initialized on LocalStack startup via `infra/localstack/init-aws.sh`.
 
 ---
 
@@ -361,11 +361,11 @@ library-system/
 │   ├── style.css
 │   └── app.js
 │
-├── nginx/
-│   └── nginx.conf
-│
-├── localstack/
-│   └── init-aws.sh              # Auto-creates SNS topics & SQS queues on boot
+├── infra/
+│   ├── localstack/
+│   │   └── init-aws.sh          # Auto-creates SNS topics & SQS queues on boot
+│   └── nginx/
+│       └── nginx.conf
 │
 ├── scripts/
 │   ├── seed.go                  # Demo data populator
